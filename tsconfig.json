@@ -1,0 +1,16 @@
+{
+   "extends": "@tsconfig/node16/tsconfig.json",
+   "compilerOptions": {
+      "noImplicitAny": true,
+      "strictNullChecks": true,
+      "importsNotUsedAsValues": "error",
+      "sourceMap": true,
+      "strict": true,
+      "resolveJsonModule": true,
+      "outDir": "dist",
+      "module": "es2022"
+   },
+   "include": [
+      "src/**/*"
+   ]
+}
