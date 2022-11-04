@@ -4,3 +4,5 @@
 /ssm-config.json
 npm-debug.log*
 .eslintcache
+/public
+/.env

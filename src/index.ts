@@ -9,8 +9,16 @@ import cacheControl from 'koa-cache-control';
 import compress from 'koa-compress';
 import compositeRouter from './route';
 import {logger} from './util/winston';
+import jwt from 'koa-jwt';
+import jwtrsa from 'jwks-rsa';
+import {config} from 'dotenv';
+// @ts-ignore: missing type defs
+import proxy from 'koa2-nginx';
+import send from 'koa-send';
 
 const app = new Koa();
+
+config();
 
 app.use(cacheControl({noStore: true}));
 
@@ -42,6 +50,10 @@ app.use(async (context, next) => {
     }
 });
 
+app.use(
+    proxy({ '/session-streaming': { target: `http://${process.env.TIVO_IP ?? ''}:49152`, changeOrigin: true } })
+);
+
 app.use(bodyParser());
 app.use(cors({maxAge: 86400}));
 app.use(compress({
@@ -50,6 +62,25 @@ app.use(compress({
             [zlib.constants.BROTLI_PARAM_QUALITY]: 1,
         },
     },
+}));
+
+app.use(jwt({
+    secret: jwtrsa.koaJwtSecret({
+        jwksUri: `https://${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`,
+        cache: true,
+        rateLimit: true,
+        jwksRequestsPerMinute: 5,
+        cacheMaxEntries: 5,
+    }),
+    audience: process.env.AUTH0_AUDIENCE,
+    issuer: `https://${process.env.AUTH0_DOMAIN}/`,
+    algorithms: ['RS256'],
+    debug: process.env.NODE_ENV === 'development',
+}).unless({
+    path : [
+        /^\/$/,
+        /^\/assets\/.*/,
+    ]
 }));
 
 app.use((context, next) => {
@@ -61,10 +92,14 @@ app.use((context, next) => {
     return next();
 });
 
+compositeRouter.get('/', async (ctx) => {
+    await send(ctx,'./public/index.html');
+});
+
 app.use(compositeRouter.routes());
 app.use(compositeRouter.allowedMethods());
 
-const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8000;
 const server = app.listen(port, process.env.HOST);
 
 gracefulShutdown(server);
