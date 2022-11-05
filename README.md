@@ -3,6 +3,7 @@
 ## Setup
 
 - `npm install`
-- copy `ssm-config.json.dist` to `ssm-config.json`
+- copy `.env.dist` to `.env`
+- update .env with your tivo ip, mak, and auth0 settings
 - `npm start`
 
