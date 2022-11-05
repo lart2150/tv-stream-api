@@ -15,6 +15,7 @@ export class Tivo {
     bodyLength : number = -1;
     body : string = '';
     chunkCount : number = 0;
+    promise ?: Promise<string>;
 
     constructor(ip : string, mak : string) {
         this.rpcId = 0;
@@ -23,6 +24,7 @@ export class Tivo {
     }
 
     async connect () {
+        console.log('connecting to tivo');
         this.disconnect();
         
         const options = {
@@ -61,9 +63,11 @@ export class Tivo {
                 reject(e);
             }
         });
-
+        console.log('waiting on auth response');
         const response = await promise;
         this.received = undefined;
+        this.promise = undefined;
+        console.log('got auth response');
 
         const bodyResponse = await this.sendRequest({type: "bodyConfigSearch", "bodyId": "-"});
         this.bodyId = bodyResponse.bodyConfig[0].bodyId;
@@ -85,8 +89,9 @@ export class Tivo {
     }
 
     async sendRequest(content : any) {
-        if (this.received) {
-            throw new Error('Don\'t send concucrent requests');
+        while (this.promise) {
+            console.log('waiting for promise');
+            await this.promise;
         }
 
         this.bodyLength = -1;
@@ -94,7 +99,7 @@ export class Tivo {
         this.data = "";
 
         const request = this.buildRequest(content);
-        const promise = new Promise<string>((resolve, reject) => {
+        this.promise = new Promise<string>((resolve, reject) => {
             this.received = resolve;
             if (!this.isConnected()) {
                 this.connect().then(() => {
@@ -113,7 +118,8 @@ export class Tivo {
             }
         });
 
-        const response = await promise;
+        const response = await this.promise;
+        this.promise = undefined;
         this.received = undefined;
         //console.log(response);
         const responseBody = JSON.parse(response);

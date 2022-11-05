@@ -6,3 +6,4 @@ npm-debug.log*
 .eslintcache
 /public
 /.env
+/cdata.*
