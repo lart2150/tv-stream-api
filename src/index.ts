@@ -15,6 +15,7 @@ import {config} from 'dotenv';
 // @ts-ignore: missing type defs
 import proxy from 'koa2-nginx';
 import send from 'koa-send';
+import { allowedUsers } from './allowedUsers';
 
 const app = new Koa();
 
@@ -87,6 +88,10 @@ app.use((context, next) => {
     if (context.url === '/health') {
         context.body = {status: 'alive'};
         return;
+    }
+
+    if (!allowedUsers.includes(context.state.user.sub)) {
+        context.throw(401, 'user not in allowedUsers');
     }
 
     return next();
