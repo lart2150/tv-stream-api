@@ -1,6 +1,6 @@
-import {promises as fs} from 'fs';
-import path from 'path';
-import {pathToFileURL} from 'url';
+import {promises as fs} from 'node:fs';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import Router from '@koa/router';
 
 export const compositeRouter = async (

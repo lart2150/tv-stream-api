@@ -1,9 +1,9 @@
 import Router from '@koa/router';
-import { getConnectedTivo } from '../util/tivoSingleton';
+import { getConnectedTivo } from '../util/tivoSingleton.js';
 import schedule from 'node-schedule';
 const router = new Router({prefix: '/getMyLineup'});
 
-let allChannels: Promise<any[]> | null = null;
+let allChannels: Promise<unknown[]> | null = null;
 
 const getChannelList = async () => {
     const tivo = await getConnectedTivo();

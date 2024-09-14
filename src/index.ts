@@ -1,4 +1,4 @@
-import * as zlib from 'zlib';
+import * as zlib from 'node:zlib';
 import cors from '@koa/cors';
 import {isHttpError} from 'http-errors';
 import gracefulShutdown from 'http-graceful-shutdown';
@@ -7,15 +7,15 @@ import Koa from 'koa';
 import bodyParser from 'koa-bodyparser';
 import cacheControl from 'koa-cache-control';
 import compress from 'koa-compress';
-import compositeRouter from './route';
-import {logger} from './util/winston';
+import compositeRouter from './route/index.js';
+import {logger} from './util/winston.js';
 import jwt from 'koa-jwt';
 import jwtrsa from 'jwks-rsa';
 import {config} from 'dotenv';
 // @ts-ignore: missing type defs
 import proxy from 'koa2-nginx';
 import send from 'koa-send';
-import { allowedUsers } from './allowedUsers';
+import { allowedUsers } from './allowedUsers.js';
 
 const app = new Koa();
 
@@ -97,14 +97,14 @@ app.use((context, next) => {
     return next();
 });
 
-compositeRouter.get('/', async (ctx) => {
+compositeRouter.get('/', async (ctx : Koa.ParameterizedContext) => {
     await send(ctx,'./public/index.html');
 });
 
 app.use(compositeRouter.routes());
 app.use(compositeRouter.allowedMethods());
 
-const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8000;
+const port = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 8000;
 const server = app.listen(port, process.env.HOST);
 
 gracefulShutdown(server);

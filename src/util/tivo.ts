@@ -1,20 +1,25 @@
-'use strict'
-import tls from 'tls';
-import fs from 'fs';
-import {URL} from 'url';
+
+import tls from 'node:tls';
+import fs from 'node:fs';
+import {URL} from 'node:url';
+import { number } from 'zod';
+
+type Options = Record<string, OptionsValues | Record<string, OptionsValues | Record<string, OptionsValues>>>;
+type OptionsValues = number | string | string[] | undefined | boolean | null;
+
 
 export class Tivo {
     ip : string;
     rpcId : number;
     mak : string;
-    sessionID : string = '';
-    bodyId : string = '';
+    sessionID  = '';
+    bodyId  = '';
     socket : tls.TLSSocket | undefined;
-    data : string = '';
+    data  = '';
     received ?: (v : string) => void;
-    bodyLength : number = -1;
-    body : string = '';
-    chunkCount : number = 0;
+    bodyLength  = -1;
+    body  = '';
+    chunkCount  = 0;
     promise ?: Promise<string>;
 
     constructor(ip : string, mak : string) {
@@ -33,6 +38,7 @@ export class Tivo {
             port : 1413,
             pfx : fs.readFileSync('cdata.p12'),
             passphrase : fs.readFileSync('cdata.password'),
+            ciphers: "DEFAULT@SECLEVEL=0",//ca md too weak
         };
 
         this.sessionID = Math.floor(Math.random() * 72736 + 2539520).toString(16);
@@ -51,7 +57,7 @@ export class Tivo {
                         this.socket.on('data', this.read.bind(this));
                     }
                 });
-                this.socket.on('error', (err) => {
+                this.socket.on('error', (err: unknown) => {
                     if (this.socket) {
                         this.socket.end();
                     }
@@ -73,10 +79,10 @@ export class Tivo {
         this.bodyId = bodyResponse.bodyConfig[0].bodyId;
     }
 
-    async sendRequestAllPages(content : any, responseKey : string, count : number = 50) {
+    async sendRequestAllPages(content : Options, responseKey : string, count  = 50) {
         content.count = 50;
         let response = await this.sendRequest(content);
-        let combinedResponse = response;
+        const combinedResponse = response;
         let offset = count;
         while (response.isBottom === false) {
             content.offset = offset;
@@ -88,7 +94,7 @@ export class Tivo {
         return combinedResponse;
     }
 
-    async sendRequest(content : any) {
+    async sendRequest(content : Options) {
         while (this.promise) {
             console.log('waiting for promise');
             await this.promise;
@@ -132,10 +138,10 @@ export class Tivo {
     }
 
     isConnected() {
-        return this.socket && this.socket.writable;
+        return this.socket?.writable;
     }
     disconnect() {
-        if (this.socket && this.socket.writable) {
+        if (this.socket?.writable) {
             this.socket.end();
             if (this.received) {
                 this.received('{}')
@@ -151,7 +157,7 @@ export class Tivo {
     read(chunk : string) {
         if (chunk.indexOf('MRPC/2 ') === 0) {
             const header = chunk.split("\r\n")[0];
-            this.bodyLength = parseInt(header.split(" ")[2], 10);
+            this.bodyLength = Number.parseInt(header.split(" ")[2], 10);
             this.body = chunk.split("\r\n\r\n")[1];
             this.chunkCount = 1;
         } else if (this.bodyLength) {
@@ -165,11 +171,11 @@ export class Tivo {
         }
     }
 
-    buildRequest(content : any) : string {
+    buildRequest(content : Options) : string {
         const eol = "\r\n";
 
         let SchemaVersion = 21;
-        if (content.SchemaVersion) {
+        if (typeof content.SchemaVersion === 'number') {
             SchemaVersion = content.SchemaVersion;
             content.SchemaVersion = undefined;
         }
@@ -201,7 +207,7 @@ export class Tivo {
      * @param {string} key 
      * @param {object} options 
      */
-    sendKey(key : string, options : any = {}) {
+    sendKey(key : string, options : Options = {}) {
         return this.sendRequest(
             {
                 type: 'keyEventSend',
@@ -211,7 +217,7 @@ export class Tivo {
         );
     }
 
-    configSearch(options : any = {}) {
+    configSearch(options : Options = {}) {
         return this.sendRequest(
             {
                 type: 'bodyConfigSearch',
@@ -220,7 +226,7 @@ export class Tivo {
         );
     }
 
-    tunerState(options : any = {}) {
+    tunerState(options : Options = {}) {
         return this.sendRequest(
             {
                 type: 'tunerStateEventRegister',
@@ -229,7 +235,7 @@ export class Tivo {
         );
     }
 
-    whatsOn(options : any = {}) {
+    whatsOn(options : Options = {}) {
         return this.sendRequest(
             {
                 type: 'whatsOnSearch',
@@ -238,7 +244,7 @@ export class Tivo {
         );
     }
 
-    phoneHome(options : any = {}) {
+    phoneHome(options : Options = {}) {
         return this.sendRequest(
             {
                 type: 'phoneHomeRequest',
@@ -247,7 +253,7 @@ export class Tivo {
         );
     }
 
-    phoneHomeStatus(options : any = {}) {
+    phoneHomeStatus(options : Options = {}) {
         return this.sendRequest(
             {
                 type: 'phoneHomeStatusEventRegister',
@@ -256,7 +262,7 @@ export class Tivo {
         );
     }
     
-    systemInformation(options : any = {}) {
+    systemInformation(options : Options = {}) {
         return this.sendRequest(
             {
                 type: 'systemInformationGet',
@@ -265,7 +271,7 @@ export class Tivo {
         );
     }
 
-    uiNavigate(uri : string, options : any = {}) {
+    uiNavigate(uri : string, options : Options = {}) {
         return this.sendRequest(
             {
                 type: 'uiNavigate',
@@ -275,7 +281,7 @@ export class Tivo {
         );
     }
 
-    getChannelList(options : any = {}) {
+    getChannelList(options : Options = {}) {
         return this.sendRequest(
             {
                 type: 'channelSearch',
@@ -293,12 +299,12 @@ export class Tivo {
     }
 
     async getAllRecordings() {
-        let response = await this.sendRequest({
+        const response = await this.sendRequest({
             type: 'recordingFolderItemSearch',
             //count: 50
         });
     
-        let recordings = [];
+        const recordings = [];
         const allRecordings = new Map();
     
         for (const folderItem of response.recordingFolderItem) {
@@ -325,7 +331,7 @@ export class Tivo {
                     }
                 }
             } else if (folderItem.recordingFolderItemId) {
-                let folderItems  = await this.sendRequest({
+                const folderItems  = await this.sendRequest({
                     type: 'recordingFolderItemSearch',
                     parentRecordingFolderItemId: folderItem.recordingFolderItemId
                 });
@@ -362,8 +368,6 @@ export class Tivo {
         dUrl.searchParams.append('id', downloadId);
         useTs && dUrl.searchParams.append('Format','video/x-tivo-mpeg-ts');
         return dUrl.toString();
-
-         `http://${this.ip}/download/download.TiVo?Container=%2FNowPlaying&id=` + encodeURIComponent(downloadId) + (useTs ? '&Format=video/x-tivo-mpeg-ts' : '');
     }
 
     async reboot() {

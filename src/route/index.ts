@@ -1,5 +1,5 @@
-import {dirname} from 'path';
-import {fileURLToPath} from 'url';
-import {compositeRouter} from '../util/koa';
+import {dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {compositeRouter} from '../util/koa.js';
 
 export default await compositeRouter(dirname(fileURLToPath(import.meta.url)));

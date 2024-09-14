@@ -1,7 +1,7 @@
 import Router from '@koa/router';
 import {z} from 'zod';
-import { getConnectedTivo } from '../util/tivoSingleton';
-import {parseBody, parseQuery} from '../util/zod';
+import { getConnectedTivo } from '../util/tivoSingleton.js';
+import {parseBody, parseQuery} from '../util/zod.js';
 
 const router = new Router({prefix: '/stream'});
 let lastSessionId : null|string = null;
@@ -19,7 +19,7 @@ router.get('/start/:recordingId', async (context) => {
             
             await tivo.sendRequest(request);
         } catch (e) {
-            console.log('error stopping other stream', lastSessionId)
+            console.error('error stopping other stream', lastSessionId)
         }
     }
     const request = {
@@ -41,6 +41,13 @@ router.get('/start/:recordingId', async (context) => {
     const tivo = await getConnectedTivo();
     
     const rsp = await tivo.sendRequest(request);
+    if (rsp?.hlsSession?.hlsSessionId === undefined) {
+        const errorCode = rsp.errorCode;
+        if (errorCode) {
+            context.throw(500, rsp.errorCode, rsp);
+        }
+        context.throw(500, "Error Starting Stream", rsp);
+    }
     lastSessionId = rsp.hlsSession.hlsSessionId;
     context.body = rsp;
 });
@@ -62,6 +69,7 @@ router.get('/startChannel/:channelId', async (context) => {
             console.log('error stopping other stream', lastSessionId)
         }
     }
+
     const request = {
         clientUuid:"5678",
         deviceConfiguration:{
@@ -82,6 +90,12 @@ router.get('/startChannel/:channelId', async (context) => {
     const tivo = await getConnectedTivo();
     
     const rsp = await tivo.sendRequest(request);
+    if (rsp?.hlsSession?.hlsSessionId === undefined) {
+        if (rsp.errorCode) {
+            context.throw(500, rsp.errorCode, rsp);
+        }
+        context.throw(500, "Error Starting Stream", rsp);
+    }
     lastSessionId = rsp.hlsSession.hlsSessionId;
     context.body = rsp;
 });

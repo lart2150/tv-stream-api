@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import { Tivo } from "./tivo";
+import { Tivo } from "./tivo.js";
 
 config();
 

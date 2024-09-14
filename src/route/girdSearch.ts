@@ -1,5 +1,5 @@
 import Router from '@koa/router';
-import { getConnectedTivo } from '../util/tivoSingleton';
+import { getConnectedTivo } from '../util/tivoSingleton.js';
 const router = new Router({prefix: '/gridSearch'});
 
 
