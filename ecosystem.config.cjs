@@ -2,7 +2,7 @@ module.exports = {
     apps: [{
         name: 'tv-stream-api',
         script: `dist/index.js`,
-        interpreter_args: '--experimental-specifier-resolution=node --tls-min-v1.0',
+        interpreter_args: '--tls-min-v1.0 --openssl-legacy-provider',
         watch: false,
         autorestart: true,
         restart_delay: 1000,
