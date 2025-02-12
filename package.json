@@ -38,7 +38,7 @@
       "http-graceful-shutdown": "^3.1.7",
       "http-status-codes": "^2.1.4",
       "jwks-rsa": "^2.1.5",
-      "koa": "^2.13.0",
+      "koa": "^2.15.4",
       "koa-bodyparser": "^4.3.0",
       "koa-cache-control": "^2.0.0",
       "koa-compress": "^5.0.1",
