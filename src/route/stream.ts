@@ -1,7 +1,5 @@
 import Router from '@koa/router';
-import {z} from 'zod';
 import { getConnectedTivo } from '../util/tivoSingleton.js';
-import {parseBody, parseQuery} from '../util/zod.js';
 
 const router = new Router({prefix: '/stream'});
 let lastSessionId : null|string = null;

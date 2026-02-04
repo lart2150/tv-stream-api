@@ -1,8 +1,7 @@
 
-import tls from 'node:tls';
-import fs from 'node:fs';
+import * as tls from 'node:tls';
+import * as fs from 'node:fs';
 import {URL} from 'node:url';
-import { number } from 'zod';
 
 type Options = Record<string, OptionsValues | Record<string, OptionsValues | Record<string, OptionsValues>>>;
 type OptionsValues = number | string | string[] | undefined | boolean | null;
